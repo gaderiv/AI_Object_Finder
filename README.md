@@ -80,33 +80,33 @@ AI_Object_Finder/
 
 To prepare the video data for training:
 
-    ```
+    
     python src/main/python/data/prepare_data.py
-    ```
+    
 
 ### Training the Model
 
 To train the model:
 
-    ```
+    
     python src/main/python/train.py
-    ```
+    
 
 ### Running Inference
 
 To run inference on a video:
 
-    ```
+    
     python src/main/python/infer.py
-    ```
+    
 
 ### Running Unit Tests
 
 To run the unit tests:
 
-    ```
+    
     python src/test/python/test_sample.py
-    ```
+    
 
 ## Project Structure
 
