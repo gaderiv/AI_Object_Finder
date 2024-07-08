@@ -37,7 +37,7 @@ AI_Object_Finder/
 ├── .gitignore
 ├── build.py
 └── README.md
-
+```
 ## Getting Started
 
 ### Prerequisites
