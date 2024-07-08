@@ -1,4 +1,4 @@
-# AI_OBJECT_FINDER
+# AI_Object_Finder
 
 This project aims to create a real-time theft detection system using deep learning models. It includes data preparation, model training, and inference scripts.
 
@@ -28,6 +28,7 @@ AI_Object_Finder/
 │   │   │   └── infer.py
 │   │   │
 │   │   ├── resources/
+│   │   │   └── __init__.py
 │   │   │
 │   ├── test/
 │   │   ├── python/
