@@ -1,28 +1,45 @@
 import os
 import cv2
 import numpy as np
+import tkinter as tk
+from tkinter import filedialog
+from tqdm import tqdm
 
-def prepare_data(input_dir, output_dir, img_size=(224,224)):
+def extract_frames(video_path, output_dir, frame_size=(224, 224), frame_skip=10):
+    cap = cv2.VideoCapture(video_path)
+    count = 0
+    frames = []
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    for filename in os.listdir(input_dir):
-        filepath = os.path.join(input_dir, filename)
-        cap = cv2.VideoCapture(filepath)
-
-        frames = []
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            frame = cv2.resize(frame, img_size)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        if count % frame_skip == 0:
+            frame = cv2.resize(frame, frame_size)
             frames.append(frame)
+        count += 1
 
-        frames = np.array(frames)
-        np.save(os.path.join(output_dir, filename.split('.')[0]), frames)
-        cap.release()
-    print("Data preparation completed.")
+    cap.release()
+
+    frames = np.array(frames)
+    video_name = os.path.basename(video_path).split('.')[0]
+    output_path = os.path.join(output_dir, f"{video_name}.npy")
+    np.save(output_path, frames)
+
+def select_video_files():
+    root = tk.Tk()
+    root.withdraw()
+    video_files = filedialog.askopenfilenames(title="Select Video Files", filetypes=[("Video Files", "*.mp4;*.avi;*.mov")])
+    return list(video_files)
+
+def main():
+    video_files = select_video_files()
+    output_dir = filedialog.askdirectory(title="Select Output Directory")
+    frame_size = (224, 224)
+    frame_skip = 10
+
+    for video_file in tqdm(video_files, desc="Processing videos"):
+        extract_frames(video_file, output_dir, frame_size, frame_skip)
 
 if __name__ == "__main__":
-    prepare_data("path_to_raw_videos", "path_to_prepared_data")
+    main()

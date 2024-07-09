@@ -28,3 +28,4 @@ def set_properties(project):
     project.build_depends_on("efficientnet_pytorch")
     project.build_depends_on("numpy")
     project.build_depends_on("opencv-python")
+    project.build_depends_on("tk")
