@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from data.datasets import Videodataset
+from src.main.python.data.datasets import Videodataset
 
 class TestVideodataset(unittest.TestCase):
     def setUp(self):

@@ -1,12 +1,13 @@
 import os
+import sys
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from models.i3d import I3D
 from models.efficientdet import EfficientDet
-from data.datasets import Videodataset
-from utils.preprocessing import preprocess_frame 
+from data.datasets import VideoDataset
+from utils.preprocessing import preprocess_frame
 
 def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
     for epoch in range(num_epochs):
@@ -24,16 +25,25 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
         print(f'Epoch {epoch}/{num_epochs - 1}, Loss: {epoch_loss:.4f}')
 
 def main():
-    data_dir = "path_to_prepared_data"
-    model_save_path = "path_to_save_model"
-    batch_size = 4
-    num_epochs = 25
+    if len(sys.argv) < 3:
+        print("Usage: python train.py <data_dir> <model_save_path>")
+        sys.exit(1)
 
-    dataset = Videodataset(data_dir)
+    data_dir = sys.argv[1]
+    model_save_path = sys.argv[2]
+
+    batch_size = 8
+    num_epochs = 10
+
+    if not os.path.exists(os.path.dirname(model_save_path)):
+        os.makedirs(os.path.dirname(model_save_path))
+
+
+    dataset = VideoDataset(data_dir)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     model = I3D().cuda()
-    criterion = nn.BCELoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     train_model(model, dataloader, criterion, optimizer, num_epochs)
