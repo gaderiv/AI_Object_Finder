@@ -1,26 +1,35 @@
 import os
-import numpy as np
-import torch
 from torch.utils.data import Dataset
+import cv2
 
-class Videodataset(Dataset):
-    def __init__(self, data_dir, transform=None):
-        self.data_dir = data_dir
+class VideoDataset(Dataset):
+    def __init__(self, video_dir, transform=None):
+        self.video_dir = video_dir
         self.transform = transform
-        self.video_files = [f for f in os.listdir(data_dir) if f.endswith('.npy')]
-
+        self.videos = []
+        for root, dirs, files in os.walk(video_dir):
+            for file in files:
+                if file.endswith(".mp4"):
+                    self.videos.append(os.path.join(root, file))
+        self.num_samples = len(self.videos)
+        print(f"Found {self.num_samples} video files.")
+        
     def __len__(self):
-        return len(self.video_files)
+        return self.num_samples
     
     def __getitem__(self, idx):
-        video_file = self.video_files[idx]
-        video_data = np.load(os.path.join(self.data_dir, video_file))
-
-        if self.transform:
-            video_data = self.transform(video_data)
-
-        label = self._get_label(video_file)
-        return video_data, label
+        video_path = self.videos[idx]
+        cap = cv2.VideoCapture(video_path)
+        frames = []
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if self.transform:
+                frame = self.transform(frame)
+            frames.append(frame)
+        cap.release()
+        return frames
     
     def _get_label(self, filename):
         return 0
