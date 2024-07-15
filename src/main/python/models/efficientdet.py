@@ -22,4 +22,4 @@ class EfficientDet(torch.nn.Module):
     def forward(self, x):
         x = self.backbone(x)
         x = self.classifier(x)
-        return torch.sigmoid(x)
+        return x
