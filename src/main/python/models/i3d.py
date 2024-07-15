@@ -10,5 +10,4 @@ class I3D(nn.Module):
         self.resnet3d.fc = nn.Linear(self.resnet3d.fc.in_features, num_classes)
 
     def forward(self, x):
-        x = self.resnet3d(x)
-        return torch.sigmoid(x)
+        return self.resnet3d(x)
