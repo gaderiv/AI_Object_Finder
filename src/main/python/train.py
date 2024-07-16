@@ -5,9 +5,9 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from models.i3d import I3D
-from models.efficientdet import EfficientDet
 from data.datasets import VideoDataset
 import matplotlib.pyplot as plt
+from models.efficientdet_3d import get_efficientdet_3d
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=15, device='cuda', log_callback=None):
     model.to(device)
@@ -84,7 +84,8 @@ def plot_metrics(train_losses, val_losses, train_accs, val_accs):
     plt.tight_layout()
     plt.show()
 
-def main(data_dir, model_save_path, model_type='i3d', log_callback=None):
+
+def main(data_dir, model_save_path, model_type='i3d', log_callback=None, model=None):
     batch_size = 32
     num_epochs = 15
     learning_rate = 0.0001
@@ -109,12 +110,13 @@ def main(data_dir, model_save_path, model_type='i3d', log_callback=None):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    if model_type == 'i3d':
-        model = I3D().cuda()
-    elif model_type == 'efficientdet':
-        model = EfficientDet().cuda()
-    else:
-        raise ValueError("Invalid model type. Choose 'i3d' or 'efficientdet'.")
+    if model is None:
+        if model_type == 'i3d':
+            model = I3D().cuda()
+        elif model_type == 'efficientdet':
+            model = get_efficientdet_3d().cuda()
+        else:
+            raise ValueError("Invalid model type. Choose 'i3d' or 'efficientdet'.")
 
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
