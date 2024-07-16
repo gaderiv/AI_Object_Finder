@@ -12,31 +12,41 @@ AI_Object_Finder/
 │   │   ├── python/
 │   │   │   ├── data/
 │   │   │   │   ├── prepare_data.py
-│   │   │   │   ├── datasets.py
-│   │   │   │   └── __init__.py
+│   │   │   │   └── datasets.py
 │   │   │   │
 │   │   │   ├── models/
 │   │   │   │   ├── i3d.py
 │   │   │   │   ├── efficientdet.py
-│   │   │   │   └── __init__.py
+│   │   │   │   └── efficientdet_3d.py
 │   │   │   │
 │   │   │   ├── utils/
-│   │   │   │   ├── preprocessing.py
-│   │   │   │   └── __init__.py
+│   │   │   │   └── preprocessing.py
 │   │   │   │
 │   │   │   ├── train.py
 │   │   │   └── infer.py
 │   │   │
 │   │   ├── resources/
-│   │   │   └── __init__.py
-│   │   │
+│   │   │   └── DCSASS Dataset/
+│   │   │   │   ├── Labels/
+│   │   │   │   │   ├── Shoplifting.csv
+│   │   │   │   │   └── Stealing.csv
+│   │   │   │   └── Output/
+│   │   │   │   │   ├── test.csv
+│   │   │   │   │   ├── train.csv
+│   │   │   │   │   ├── val.csv
+│   │   │   │   │   └── second model/
+│   │   │   │   │   │   ├── test.csv
+│   │   │   │   │   │   ├── train.csv
+│   │   │   │   │   │   └── val.csv
+│   │
 │   ├── test/
-│   │   ├── python/
+│   │   └── python/
 │   │   │   └── test_sample.py
-│
 ├── .gitignore
 ├── build.py
-└── README.md
+├── README.md
+└── LICENSE
+
 ```
 ## Getting Started
 

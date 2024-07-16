@@ -123,6 +123,7 @@ dmypy.json
 # Pytype static type analyzer
 .pytype/
 
-# Datasets
-resources/
-
+#datasets
+Shoplifting/
+Stealing/
+*.pth
