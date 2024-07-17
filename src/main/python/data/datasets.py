@@ -2,10 +2,10 @@ import os
 import random
 import cv2
 import torch
-from torch.utils.data import Dataset
 import numpy as np
-from utils.preprocessing import preprocess_frame
 import pandas as pd
+from torch.utils.data import Dataset
+from utils.preprocessing import preprocess_frame
 
 class VideoDataset(Dataset):
     def __init__(self, csv_file, transform=None):
@@ -29,7 +29,6 @@ class VideoDataset(Dataset):
         
         if not video_files:
             print(f"No video files found in folder: {video_folder}")
-            # Return a blank frame instead of None
             return torch.zeros((3, 16, 224, 224), dtype=torch.float32), torch.tensor(label, dtype=torch.float32)
         
         # Use the specific video file if it exists, otherwise randomly select one

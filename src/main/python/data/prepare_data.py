@@ -5,8 +5,8 @@ from sklearn.model_selection import train_test_split
 
 def load_data(labels_file):
     df = pd.read_csv(labels_file)
-    df['video_path'] = df['Shoplifting001_x264_0']
-    df = df.drop(columns=['Shoplifting001_x264_0', 'Shoplifting'])
+    df['video_path'] = df['Stealing002_x264_0'] 
+    df = df.drop(columns=['Stealing002_x264_0', 'Stealing'])
     df = df.rename(columns={'0': 'label'})
     return df
 
@@ -15,7 +15,6 @@ def prepare_data(labels_file, output_dir, base_video_dir, log_callback=None):
         log_callback("Loading data...")
     df = load_data(labels_file)
     
-    # Correct the video paths to point to the correct folders
     df['video_path'] = df['video_path'].apply(lambda x: os.path.join(base_video_dir, f"{x.split('_')[0]}_x264.mp4", x))
     
     if log_callback:

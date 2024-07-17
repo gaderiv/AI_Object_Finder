@@ -1,12 +1,11 @@
 import os
-import sys
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from models.i3d import I3D
 from data.datasets import VideoDataset
-import matplotlib.pyplot as plt
 from models.efficientdet_3d import get_efficientdet_3d
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=15, device='cuda', log_callback=None):
