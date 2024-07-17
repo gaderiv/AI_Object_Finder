@@ -1,28 +1,36 @@
 import torch
 import sys
-import numpy as np
 import cv2
+import os
+import random
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from models.i3d import I3D
-from models.efficientdet import EfficientDet
 from models.efficientdet_3d import get_efficientdet_3d
 from utils.preprocessing import preprocess_frame
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix, accuracy_score
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-import pandas as pd
-import random
 
 def load_model(model_path, model_type="i3d"):
     if model_type == "i3d":
         model = I3D()
-    elif model_type == 'efficientdet':
-            model = get_efficientdet_3d().cuda()
+    elif model_type == "efficientdet":
+        model = get_efficientdet_3d()
     else:
         raise ValueError("Unknown model type")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    
+    # Load state dict
+    state_dict = torch.load(model_path, map_location=device)
+    
+    # Remove 'module.' prefix if it exists (happens when model was trained with DataParallel)
+    new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+    
+    # Load the state dict
+    model.load_state_dict(new_state_dict, strict=False)
+    
     model.eval()
     model.to(device)
     return model
@@ -79,14 +87,15 @@ def plot_confusion_matrix(conf_matrix):
     plt.show()
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python infer.py <model_path> <test_csv>")
+    if len(sys.argv) < 4:
+        print("Usage: python infer.py <model_path> <test_csv> <model_type>")
         sys.exit(1)
 
     model_path = sys.argv[1]
     test_csv = sys.argv[2]
+    model_type = sys.argv[3]
 
-    model = load_model(model_path)
+    model = load_model(model_path, model_type)
     
     # Load labels
     df = pd.read_csv(test_csv)

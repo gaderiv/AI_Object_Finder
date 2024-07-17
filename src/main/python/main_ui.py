@@ -1,22 +1,20 @@
-import tkinter as tk
-from tkinter import filedialog, ttk, scrolledtext
 import threading
 import os
 import sys
+import cv2
+import tkinter as tk
+from tkinter import filedialog, ttk, scrolledtext
+from PIL import Image, ImageTk
 
-# Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
-from data.datasets import VideoDataset
 from models.i3d import I3D
-import torch
-from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
 from data.prepare_data import prepare_data
 from train import main as train_main
 from infer import main as infer_main
 from models.efficientdet_3d import get_efficientdet_3d
+from real_time_detection import RealTimeDetector
 
 class LogRedirector:
     def __init__(self, widget):
@@ -28,6 +26,57 @@ class LogRedirector:
 
     def flush(self):
         pass
+
+class DetectionThread(threading.Thread):
+    def __init__(self, detector, video_source, status_var, progress_bar, canvas):
+        threading.Thread.__init__(self)
+        self.detector = detector
+        self.video_source = video_source
+        self.status_var = status_var
+        self.progress_bar = progress_bar
+        self.canvas = canvas
+        self.stop_event = threading.Event()
+
+    def run(self):
+        cap = cv2.VideoCapture(self.video_source)
+        
+        while not self.stop_event.is_set():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            results, annotated_frame = self.detector.detect(frame)
+            
+            for result in results:
+                if result['is_theft']:
+                    cv2.putText(annotated_frame, f"Theft Detected (ID: {result['id']})", 
+                                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            
+            # Convert the frame to RGB (from BGR)
+            annotated_frame = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+            
+            # Convert to ImageTk format
+            image = Image.fromarray(annotated_frame)
+            photo = ImageTk.PhotoImage(image=image)
+            
+            # Update the canvas with the new frame
+            self.canvas.config(width=photo.width(), height=photo.height())
+            self.canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+            self.canvas.image = photo  # Keep a reference to prevent garbage collection
+
+            if any(result['is_theft'] for result in results):
+                self.status_var.set("Theft Detected!")
+            else:
+                self.status_var.set("No Theft Detected")
+
+        cap.release()
+        self.status_var.set("Real-time detection stopped")
+        self.progress_bar.stop()
+
+    def stop(self):
+        self.stop_event.set()
+
+
 
 def run_prepare_data(labels_file, output_dir, base_video_dir, status_var, progress_bar, log_text):
     try:
@@ -75,7 +124,7 @@ def run_train_model(data_dir, model_save_path, model_type, status_var, progress_
         # Reset stdout
         sys.stdout = sys.__stdout__
 
-def run_infer(model_path, test_csv, status_var, progress_bar, log_text):
+def run_infer(model_path, test_csv, model_type, status_var, progress_bar, log_text):
     try:
         status_var.set("Running inference...")
         progress_bar.start()
@@ -83,7 +132,7 @@ def run_infer(model_path, test_csv, status_var, progress_bar, log_text):
         # Redirect stdout to log_text
         sys.stdout = LogRedirector(log_text)
 
-        sys.argv = ['infer.py', model_path, test_csv]
+        sys.argv = ['infer.py', model_path, test_csv, model_type]
         infer_main()
 
         status_var.set("Inference completed")
@@ -97,6 +146,23 @@ def run_infer(model_path, test_csv, status_var, progress_bar, log_text):
         progress_bar.stop()
         # Reset stdout
         sys.stdout = sys.__stdout__
+
+def run_real_time_detection(model_path, model_type, video_source, status_var, progress_bar, log_text, canvas):
+    try:
+        status_var.set("Running real-time detection...")
+        progress_bar.start()
+
+        detector = RealTimeDetector(model_path, model_type)
+        
+        detection_thread = DetectionThread(detector, video_source, status_var, progress_bar, canvas)
+        detection_thread.start()
+
+        return detection_thread
+
+    except Exception as e:
+        status_var.set(f"Error: {e}")
+        progress_bar.stop()
+        return None
 
 def select_prepare_data_files(status_var, progress_bar, log_text):
     labels_file = filedialog.askopenfilename(title="Select Labels File", filetypes=[("CSV Files", "*.csv")])
@@ -137,7 +203,11 @@ def select_infer_directories(status_var, progress_bar, log_text):
     if not test_csv:
         status_var.set("No test CSV file selected. Inference cancelled.")
         return
-    threading.Thread(target=run_infer, args=(model_path, test_csv, status_var, progress_bar, log_text)).start()
+    model_type = select_model_type()
+    if not model_type:
+        status_var.set("No model type selected. Inference cancelled.")
+        return
+    threading.Thread(target=run_infer, args=(model_path, test_csv, model_type, status_var, progress_bar, log_text)).start()
 
 def select_model_type():
     model_type = tk.StringVar()
@@ -158,6 +228,40 @@ def select_model_type():
     top.wait_window()
 
     return model_type.get()
+
+def select_camera_source():
+    camera_index = tk.simpledialog.askinteger("Camera Source", "Enter camera index (0 for default camera):", minvalue=0, maxvalue=10)
+    return camera_index if camera_index is not None else 0
+
+
+def select_real_time_detection(root, status_var, progress_bar, log_text, canvas):
+    model_path = filedialog.askopenfilename(title="Select Model File", filetypes=[("PyTorch Model", "*.pth")])
+    if not model_path:
+        status_var.set("No model file selected. Real-time detection cancelled.")
+        return None
+
+    model_type = select_model_type()
+    if not model_type:
+        status_var.set("No model type selected. Real-time detection cancelled.")
+        return None
+
+    # Ask user to choose between video file and camera
+    choice = tk.messagebox.askquestion("Video Source", "Do you want to use a camera?")
+    if choice == 'yes':
+        video_source = select_camera_source()
+    else:
+        video_source = filedialog.askopenfilename(title="Select Video File", filetypes=[("Video Files", "*.mp4;*.avi")])
+        if not video_source:
+            status_var.set("No video file selected. Real-time detection cancelled.")
+            return None
+
+    detection_thread = run_real_time_detection(model_path, model_type, video_source, status_var, progress_bar, log_text, canvas)
+    
+    if detection_thread:
+        stop_button = tk.Button(root, text="Stop Detection", command=detection_thread.stop)
+        stop_button.pack()
+    
+    return detection_thread
 
 def main():
     root = tk.Tk()
@@ -184,6 +288,10 @@ def main():
     log_text = scrolledtext.ScrolledText(root, height=10)
     log_text.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
+    # Create a canvas for displaying the video feed
+    canvas = tk.Canvas(root, width=640, height=480)
+    canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
     prepare_data_button = tk.Button(button_frame, text="Prepare Data", command=lambda: select_prepare_data_files(status_var, progress_bar, log_text))
     prepare_data_button.pack(side=tk.LEFT, padx=5)
 
@@ -192,6 +300,9 @@ def main():
 
     infer_button = tk.Button(button_frame, text="Infer", command=lambda: select_infer_directories(status_var, progress_bar, log_text))
     infer_button.pack(side=tk.LEFT, padx=5)
+
+    real_time_button = tk.Button(button_frame, text="Real-time Detection", command=lambda: select_real_time_detection(root, status_var, progress_bar, log_text, canvas))
+    real_time_button.pack(side=tk.LEFT, padx=5)
 
     root.mainloop()
 

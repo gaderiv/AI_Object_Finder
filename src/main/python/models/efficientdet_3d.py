@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from efficientnet_pytorch import EfficientNet
 
@@ -7,7 +6,7 @@ class EfficientDet3D(nn.Module):
         super(EfficientDet3D, self).__init__()
         self.efficientnet = EfficientNet.from_pretrained('efficientnet-b0')
         self.temporal_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
-        self.classifier = nn.Linear(1280, num_classes)  # EfficientNet-B0 outputs 1280 features
+        self.classifier = nn.Linear(1280, num_classes)  
 
     def forward(self, x):
         # x shape: [batch_size, 3, 16, 224, 224]
