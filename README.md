@@ -23,6 +23,8 @@ AI_Object_Finder/
 │   │   │   │   └── preprocessing.py
 │   │   │   │
 │   │   │   ├── train.py
+|   |   |   ├── main_ui.py
+|   |   |   ├── real_time_detection.py
 │   │   │   └── infer.py
 │   │   │
 │   │   ├── resources/
